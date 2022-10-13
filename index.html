@@ -1,0 +1,763 @@
+                                                      <!-- 
+    飞机大战
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机你太美</title>
+    <style>
+        body {
+            background-color: rgba(0, 0, 0, 0.678) !important;
+            overflow: hidden;
+        }
+        #az1{
+            /* background-color: rgb(231, 165, 165); */
+            background-image: url(./img/1.png);
+            background-position: 50% 50%;
+            background-size:100%;
+            background-repeat: no-repeat;
+            position: absolute;
+            z-index: 9;   
+        }
+        .ememy{
+            background-image: url(./img/2.png);
+            background-position: 50% 50%;
+            background-size:100%;
+            background-repeat: no-repeat;
+            position: absolute;
+            z-index: 9;   
+        }
+        #back{
+            width: 65%;
+            margin: 0 auto;
+            background-color: white;
+            z-index: 3;
+            overflow: hidden;
+        }
+        .xing {
+            width: 3px;
+            height: 3px;
+            background-color: white;
+            z-index: 5;
+            display: block;
+            position: absolute;
+        }
+        #xings {
+	        cursor: none;
+
+            z-index: 4;
+            width: 100%;
+            height: 100%;
+        }
+        .dan {
+            background-color: rgb(245, 79, 79);
+            z-index: 6;
+            display: block;
+            border-radius: 50% 50% 1px 1px;
+            position: absolute;
+        }
+        #kaiz {
+            width: 100%;
+            height: 100%;
+            margin: 0 auto;   
+            background-color: rgb(158, 116, 116) ;
+            z-index: 9;
+            padding-top: 40%;
+        }
+        #kai {
+            width: 200px;
+            height: 80px;
+            background-color: aliceblue;
+            margin: 0 auto;
+            border-radius: 12px;
+            border:5px solid rgb(220, 231, 168);
+            font-size: 30px;
+            text-align: center;
+            line-height: 60px;
+            font-weight: bold;
+            color: rgb(88, 88, 88);
+            box-shadow: 10px 10px 5px rgb(100, 100, 100);
+            cursor:pointer;
+
+
+            -moz-user-select:none;
+            -webkit-user-select:none;
+            user-select:none;  
+        }
+        #jie {
+            width: 200px;
+            height: 80px;
+            background-color: aliceblue;
+            margin: 0 auto;
+            border-radius: 12px;
+            border:5px solid rgb(220, 231, 168);
+            font-size: 20px;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            color: rgb(88, 88, 88);
+            box-shadow: 10px 10px 5px rgb(100, 100, 100);
+            cursor:pointer;
+            -moz-user-select:none;
+            -webkit-user-select:none;
+            user-select:none;  
+            display: none;
+
+        }
+        #jie > span {
+            font-size: 18px;
+            color: red;
+        }
+        #fen {
+            width: 60px;
+            height: 30px;
+            border: 1px solid rgb(255, 46, 46);
+            font-size: 20px;
+            text-align: center;
+            line-height: 30px;
+            color: rgb(255, 255, 255);
+            cursor:pointer;
+            z-index: 13;
+            display: none;
+
+            -moz-user-select:none;
+            -webkit-user-select:none;
+            user-select:none;  
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="back">
+            <div id="fen" v-text="kongz.fen"></div>
+            <div id="kaiz">
+                <div id="kai" @click="kai">开始射鸡</div>
+                <div id="jie" @click="jie()">下蛋合计 ：<span v-text="kongz.fen"></span><br>重新开鸡 </div>
+            </div>
+            <div id="az1" :style="size"></div>
+            <div id="xings"></div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/gh/FuGuiJar/A@master/index.js"></script>
+    <script src="https://cdn.staticfile.org/vue/3.2.26/vue.global.js"></script>
+    <script src="https://cdn.staticfile.org/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.staticfile.org/howler/2.2.3/howler.min.js"></script>
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    // 战机尺寸
+                    size: {
+                        'width': 80 + 'px',
+                        'height': 80 + 'px'
+                    },
+                    // 子弹信息
+                    dan: {
+                        width: 5,
+                        height: 10,
+                        dInter: {},
+                        dTime: 400, // 子弹定时器循环时间
+                        danTime: 2500, //子弹动画时间
+                    },
+                    // MY 战机信息
+                    az1Infos: {
+                        x: 0,
+                        y: 0,
+                        step: 10, // 飞机移动步长
+                        moveTime: 30, // 移动动画时间（ms）
+                        left:  false,
+                        right:  false,
+                        top:  false,
+                        bottom:  false,
+                        kog:  false,
+                        kInter: {}
+                    },
+                    // 敌机信息
+                    emeMyInfo: {
+                        eNum: 3, //x生成的战机数量
+                        eInter: {}, // 敌方战机生成定时器
+                        eTime: 2000,//定时器循环时间         
+                        eDuration: 12000,// 飞机飞行速度
+                    },
+                    backInter: {},
+                    // 背景信息
+                    backInfo: {
+                        x: 0,
+                        y: 0,
+                        width: 0,
+                        height: 0,
+                        xNum: 4, //x 方位生成得星个数
+                        yNum: 300, //y 时间内生成得x层数
+                        xingMinSize: 1, // 星最小 大小
+                        xingMaxSize: 2, // 星最大 大小
+                        duration: 8000, // 星流速
+                    },
+                    // 控制
+                    kongz: {
+                        kaiMuic: {},
+                        fen: 0,
+                    }
+                }
+            },
+            mounted() {
+                this.kong();
+                this.winReSize();
+                this.back();
+                this.init();
+                this.visibilitychange();
+               
+
+                anime({
+                    // targets: '#az2',
+                    // translateY: '-80vh',
+                    // duration: 2000,
+                    // scaleY: [
+                    //     { value: [1.75, 1 ], duration: 500 ,delay: 500,},
+                    // ],
+                    // rotate: '100turn',
+                    // backgroundColor: '#333',
+                    // loop: true,
+                    // direction: 'alternate',
+                    // easing: 'easeInCubic'
+                    // easing: 'easeInOutQuad',
+                    // easing: 'easeOutElastic(3)',
+                    // loop: true
+                    // elasticity: 700
+                });
+            },
+            computed: {},
+            watch:{},
+            methods: {
+                // 重新开始
+                jie() {
+
+                    let aa = setInterval(() => {
+                        console.log('1 :>> ', 1);
+                        let ememy = document.getElementsByClassName('ememy');
+                        for (let i = 0; i < ememy.length; i++) {
+                            ememy[i].remove();
+                        }
+                    }, 10);
+                   
+                    setTimeout(() => {
+                        clearInterval(aa);
+                    }, 400);
+
+                    this.kongz.fen = 0;
+
+                    let kaiz = document.getElementById("kaiz");
+                    let jie = document.getElementById("jie");
+                    let fen = document.getElementById("fen");
+                    let az1 = document.getElementById("az1");
+
+                    kaiz.style.display = 'none';
+                    jie.style.display = 'none';
+                    fen.style.display = 'block';
+                    az1.style.display = 'block';
+
+                    this.az1Inter();
+                    this.danInter();
+                    this.emeMyInter();
+
+                    let az1Info = document.getElementById("az1").getBoundingClientRect();
+                    az1.style.left = this.backInfo.x + (this.backInfo.width / 2) - (parseInt(this.size.width) / 2) + 'px';
+                    az1.style.top = this.backInfo.height * 0.75 + 'px';
+                        
+                },
+                // 开始游戏
+                kai () {
+                    let kaiz = document.getElementById("kaiz");
+                    let kai = document.getElementById("kai");
+                    let fen = document.getElementById("fen");
+                    
+                    // this.focus();
+                    // this.anImpl();
+
+                    this.keyDown();
+                    this.danInter();
+                    this.emeMyInter();
+
+                    kai.style.display = "none";
+                    kaiz.style.display = "none";
+                    fen.style.display = "block";
+                    this.kongz.kaiMuic.stop();
+                    this.kongz.kaiMuic = new Howl({
+                        src: 'music/yunxing.mp3',
+                        autoplay: true,
+                        loop: true,
+                        volume: 0.1,
+                    });
+                },
+                // 开局音效
+                kong() {
+                    this.kongz.kaiMuic = new Howl({
+                        src: 'music/3310523721.mp3',
+                        autoplay: true,
+                        loop: true,
+                        volume: 0.3,
+                    });
+                },
+                // 背景动画
+                anImpl() {
+                    return anime({
+                        targets: '.xing',
+                        duration: this.backInfo.duration,
+                        translateY: 1500,
+                        direction: 'alternate',
+                        loop: false,
+                        easing: 'linear',
+                    });
+                },
+                // 背景定时器
+                backInterval(x) {
+                    let info = this.backInfo;
+                    this.backInter = setInterval(() => {
+                       this.doXing();
+                    }, info.yNum);
+                }, 
+                // 生产星
+                doXing() {
+                    let info = this.backInfo;
+                     // 生产星
+                     for (let index = 0; index < info.xNum; index++) {
+                            this.createXing();
+                        }
+                    // 添加动画
+                    this.anImpl();
+                    // 移除星
+                    for (let index = 0; index < info.xNum; index++) {
+                        let xing = document.getElementsByClassName('xing')[index];
+                        let ty = xing.style.transform;
+                        var num= ty.replace(/[^0-9.]/ig,"");
+                        if(num > (info.height - 50)) {
+                            xing.remove();
+                        }
+                    }
+                },
+                // // 初始化MY战机位置
+                init() {
+                    let az1Info = document.getElementById("az1").getBoundingClientRect();
+                    let az1 = document.getElementById("az1");
+                    az1.style.left = az1Info.x + 'px';
+                    az1.style.left = az1Info.x + (this.backInfo.width / 2) - (parseInt(this.size.width) / 2) + 'px';
+                    az1.style.top = this.backInfo.height * 0.75 + 'px';
+                },
+                // 初始化背景
+                initBack() {
+                    let winY = document.documentElement.clientHeight || document.body.clientHeight;
+                    document.getElementById("back").style.height = winY + 'px';
+
+                    let backinfo = document.getElementById("back").getBoundingClientRect();
+                    this.backInfo.x = backinfo.x;
+                    this.backInfo.y = backinfo.y;
+                    this.backInfo.width = backinfo.width;
+                    this.backInfo.height = backinfo.height;
+                },
+                // 创建星
+                createXing() {
+                    let info = this.backInfo;
+                    let xings = document.getElementById("xings");
+                    let span = document.createElement('span');
+                    let xingSize = this.randomNum(info.xingMinSize,info.xingMaxSize);
+                    let op = this.random(9);
+                    let y = this.randomNum(10,20);
+                    let x = this.randomNum(info.x,info.x + info.width);
+
+                    span.className = 'xing';
+                    span.style.width = xingSize + 'px';
+                    span.style.height = xingSize + 'px';
+                    span.style.left = x + 'px';
+                    span.style.top = y + 'px';
+                    span.style.opacity = op * 10 + "%";
+                    
+                    if (this.random(3) == 2) {
+                        span.style.borderRadius = 50 + '%';
+                    }
+                    xings.appendChild(span);
+                },
+                // 创建背景
+                back() {
+                    this.initBack();
+                    this.backInterval();
+                },
+                // 焦点监听
+                focus() {
+                    // 获得焦点
+                    window.onfocus = ()=> {
+                        this.az1Inter();
+                        this.danInter();
+                        this.emeMyInter();
+                    }
+                    // 失去焦点
+                    window.onblur = ()=> {
+                        clearInterval(this.az1Infos.kInter);
+                        clearInterval(this.dan.dInter);
+                        clearInterval(this.emeMyInfo.eInter);
+                    }
+                },
+                // 窗口大小监听
+                winReSize() {
+                    window.onresize = (e)=> {
+                        this.initBack();
+                    }
+                },
+                // 工作监听
+                visibilitychange() {
+                    document.addEventListener('visibilitychange', function(){
+                        let isHidden = document.hidden;
+                            if(isHidden){
+                                // 非焦点
+                                document.title = '去哪儿了';
+                                app.anImpl().pause;
+                                clearInterval(app.backInter);
+                            } else {
+                                // 焦点
+                                document.title = '你终于回来了啊';
+                                app.anImpl().play;
+                                app.backInterval();
+                            }
+                        }
+                    );
+                },
+                // 敌机定时器
+                emeMyInter() {
+                    let emeMyInfo = this.emeMyInfo;
+                    let backinfo = this.backInfo;
+                    let size = this.size;
+                    this.emeMyInfo.eInter = setInterval(() => {
+                        // 生产敌机
+                        this.createEmemy();
+                        // 添加动画
+                        anime({
+                            targets: '.ememy',
+                            translateY: backinfo.height + 200,
+                            duration: emeMyInfo.eDuration,
+                            direction: 'alternate',
+                            loop: false,
+                            easing: 'linear'
+                        });
+                        // 移除越界战机
+                        let ememy = document.getElementsByClassName('ememy');
+                        for (let index = 0; index < emeMyInfo.eNum; index++) {
+                            let eme = ememy[index];
+                            if (eme == undefined ) {
+                                break;
+                            }
+                            let ty = eme.style.transform;
+                            var num= ty.replace(/[^0-9.]/ig,"");
+                            if(num > (backinfo.height)) {
+                                eme.remove();
+                            }
+                        }
+                        
+                    }, emeMyInfo.eTime);
+                },
+                // 判断是否碰撞
+                doPeng() {
+                    let size = this.size;
+                    let az1 = document.getElementById("az1");
+                    let az1Info = az1.getBoundingClientRect();
+                    let ememy = document.getElementsByClassName("ememy");
+                    let dan = document.getElementsByClassName('dan');
+
+                    for (let i = 0; i < ememy.length; i++) {
+                        let emeinfo = ememy[i].getBoundingClientRect();
+                        for (let j = 0; j < dan.length; j++) {
+                            let daninfo = dan[j].getBoundingClientRect();
+                            if(this.pengz({x: daninfo.x,y: daninfo.y},{x: emeinfo.x,y: emeinfo.y},size)){
+                                new Howl({
+                                    src: ['music/bao.mp3'],
+                                    autoplay: true,
+                                    loop: false,
+                                    volume: 0.3,
+                                });
+                                this.kongz.fen++;
+                                dan[j].remove();
+                                ememy[i].remove();
+                            }
+                        }
+                        if(this.pengz({x: az1Info.x,y: az1Info.y},{x: emeinfo.x,y: emeinfo.y},size)){
+                            new Howl({
+                                    src: ['music/bao.mp3'],
+                                    autoplay: true,
+                                    loop: false,
+                                    volume: 0.2,
+                            });
+                            let kaiz = document.getElementById("kaiz");
+                            let jie = document.getElementById("jie");
+                            let fen = document.getElementById("fen");
+                            let az1 = document.getElementById("az1");
+                            
+                            kaiz.style.display = 'block';
+                            jie.style.display = 'block';
+                            fen.style.display = 'none';
+                            az1.style.display = 'none';
+
+                            clearInterval(this.az1Infos.kInter);
+                            clearInterval(this.dan.dInter);
+                            clearInterval(this.emeMyInfo.eInter);
+
+                            ememy[i].remove();
+                        }
+                    }
+                },
+                // 创建敌机
+                createEmemy() {
+                    let backinfo = this.backInfo;
+                    let emeMyInfo = this.emeMyInfo;
+                    let size = this.size;
+                    let back = document.getElementById("back");
+                    let num = this.emeMyInfo.eNum;
+                    let xs = new Array();
+                    let _this = this;
+
+                    // 生成位置
+                    for (let index = 0; index < num; index++) {
+                        xs.push(this.randomNum(backinfo.x,(backinfo.x + backinfo.width) - parseInt(size.width)));
+                    }
+                    // 执行算法
+                    s();
+                    // 生产敌机
+                    for (let index = 0; index < num; index++) {
+                        let y = this.randomNum(-(parseInt(size.height)),parseInt(size.height));
+                        let div = document.createElement('div');
+
+                        div.style.width = size.width;
+                        div.style.height = size.height;
+                        div.className = 'ememy';
+                        div.style.left = xs[index] + 'px';
+                        div.style.top = y - parseInt(size.height) + 'px';
+
+                        back.appendChild(div);
+                    }
+                    // 敌机散布非居中算法
+                    function s() {
+                        for (let i = 0; i < num -1; i++) {
+                            for (let j = 0; j < num - 1- i; j++) {
+                                if(xs[j+1] > xs[j]){
+                                    let temp = xs[j];
+                                    xs[j] = xs[j+1];
+                                    xs[j+1] = temp;
+                                }
+                            }
+                        }
+                        for (let i = 0; i < num - 1; i++) {
+                           if(xs[i] - xs[i + 1] <= parseInt(size.width) + 15) {
+                                xs[i] = _this.randomNum(backinfo.x,(backinfo.x + backinfo.width) - parseInt(size.width));;
+                                s();
+                            }else {
+                               continue;
+                           }
+                        }    
+
+                    }
+                },
+                // az1 移动定时器
+                az1Inter() {
+                    this.az1Infos.kInter = setInterval(() => {
+                        // 执行战机是否移动
+                        this.az1Move();
+                        // 执行碰撞
+                        this.doPeng();
+                    }, 30);
+                },
+                // az1 移动
+                az1Move() {
+                    let backinfo = this.backInfo;
+                    let size = this.size;
+                    let az1 = document.getElementById("az1");
+                    let az1Info = az1.getBoundingClientRect();
+                    //当其中一个条件为true时，则执行当前函数（移动对应方向）
+                    if(this.az1Infos.left) {
+                        if((az1Info.x - parseInt(size.width) / 2) < (backinfo.x )){
+                            let a = backinfo.x - (az1Info.x );
+                            az1.style.left = (az1Info.x += a) + "px";
+                            return;
+                        }
+                        az1.style.left = (az1Info.x -= this.az1Infos.step) + "px"
+                    } 
+                    if(this.az1Infos.top) {
+                        if((az1Info.y ) <= (backinfo.y)) {
+                            return;
+                        }
+                        az1.style.top = (az1Info.y -= this.az1Infos.step) + "px"
+                    } 
+                    if(this.az1Infos.right) {
+                        // 判断是否越界
+                        if((az1Info.x + (parseInt(size.width))) >= (backinfo.x + backinfo.width)) {
+                            // 越界位置纠正
+                            let a = (az1Info.x + (parseInt(size.width))) - (backinfo.x + backinfo.width);
+                                az1.style.left = (az1Info.x -= a) + "px";
+                            return;
+                        }
+                        az1.style.left = (az1Info.x += this.az1Infos.step) + "px";
+                    } 
+                    if(this.az1Infos.bottom) {
+                        if((az1Info.y + (parseInt(size.height))) >= (backinfo.y + backinfo.height)) {
+                            return;
+                        }
+                        az1.style.top = (az1Info.y += this.az1Infos.step) + "px"
+                    }
+                },
+                // 发射子弹
+                danInter() {
+                    let dan = document.getElementsByClassName('dan');
+                    let backinfo = this.backInfo;
+                    this.dan.dInter = setInterval(() => {
+                        // 清除消失边界的子弹
+                        for (let index = 0; index < dan.length; index++) {
+                            if (dan[index].getBoundingClientRect().y < backinfo.y) {
+                                dan[index].remove();
+                            }
+                        } 
+                        // 判断是否按下
+                        if(this.az1Infos.kog) {
+                            let az1 = document.getElementById("az1");
+                            let az1Info = az1.getBoundingClientRect();
+                            let back = document.getElementById('back');
+                            // 创建子弹
+                            this.createDan();
+                            // 发射音频
+                            new Howl({
+                                    src: ['music/ji.mp3'],
+                                    autoplay: true,
+                                    loop: false,
+                                    volume: 0.3,
+                            });
+                            // 添加动画
+                            anime({
+                                targets: '.dan',
+                                translateY: -1000,
+                                duration: this.dan.danTime,
+                                direction: 'alternate',
+                                loop: false,
+                                easing: 'linear'
+                            });
+                            // 将子弹转移到父层
+                            if(az1.childElementCount > 0) {
+                                for (let index = 0; index < az1.childElementCount; index++) {
+                                    dan[index].style.left = az1Info.x + (az1Info.width / 2) - (this.dan.width / 2)  + 'px';
+                                    dan[index].style.top = az1Info.y - 15 + 'px';
+                                    back.appendChild(dan[index]);
+                                }
+                            }
+                        }
+                    }, this.dan.dTime);
+                },
+                // 创建子弹
+                createDan() {
+                    let az1 = document.getElementById("az1");
+                    let span = document.createElement('span');
+                    let az1Info = az1.getBoundingClientRect();
+                   
+                    span.className = 'dan';
+                    span.style.width = this.dan.width + 'px';
+                    span.style.height = this.dan.height + 'px';
+                    span.style.left = (az1Info.width / 2) - (this.dan.width / 2) + 'px';
+                    span.style.top = -15 + 'px';
+                    az1.appendChild(span);
+                },
+                // 键盘监听
+                keyDown() {
+                    this.az1Inter();
+                    az1.style.transition="left " + this.az1Infos.moveTime +"ms," + "top " + this.az1Infos.moveTime +"ms ";
+                    document.onkeydown = (e)=> {
+                        //事件对象兼容
+                        let e1 = e || event || window.event || arguments.callee.caller.arguments[0]
+                        if (e1 && e1.keyCode == 32) {
+                            this.az1Infos.kog = true;
+                        } 
+                        if (e1 && e1.keyCode == 87) {
+                            this.az1Infos.top = true;
+                        } 
+                        if (e1 && e1.keyCode == 83) {
+                            this.az1Infos.bottom = true;
+                        }
+                        if (e1 && e1.keyCode == 65) {
+                            this.az1Infos.left = true;
+                        }
+                        if (e1 && e1.keyCode == 68) {
+                            this.az1Infos.right = true;
+                        }
+                    }
+                    document.onkeyup = (e)=> {
+                        //事件对象兼容
+                        let e1 = e || event || window.event || arguments.callee.caller.arguments[0]
+                        if (e1 && e1.keyCode == 32) {
+                            this.az1Infos.kog = false;
+                        }
+                        if (e1 && e1.keyCode == 87) {
+                            this.az1Infos.top = false;
+                        } 
+                        if (e1 && e1.keyCode == 83) {
+                            this.az1Infos.bottom = false;
+                        } 
+                        if (e1 && e1.keyCode == 65) {
+                            this.az1Infos.left = false;
+                        } 
+                        if (e1 && e1.keyCode == 68) {
+                            this.az1Infos.right = false;
+                        }
+                    }
+                },
+                // 碰撞检测
+                pengz(my,enemy,size) {
+                    let isX = false;
+                    let isY = false;
+                    if(my.x >= enemy.x) {
+                        if(my.x - enemy.x <= parseInt(size.width)) {
+                            isX = true;
+                        }else {
+                            isX = false;
+                        }
+                    }else {
+                        if(enemy.x - my.x <= parseInt(size.width)) {
+                            isX = true;
+                        }else {
+                            isX = false;
+                        }
+                    }
+                    if(my.y >= enemy.y) {
+                        if(my.y - enemy.y <= parseInt(size.height)) {
+                            isY = true;
+                        }else {
+                            isY = false;
+                        }
+                    }else {
+                        if(enemy.y - my.y <= parseInt(size.height)) {
+                            isY = true;
+                        }else {
+                            isY = false;
+                        }
+                    }
+                    if(isX && isY) {
+                        return true;
+                    }else{
+                        return false;
+                    }
+                },
+                // 随机数
+                random(x) {
+                    return Math.ceil(Math.random() * x);
+                },
+                randomNum(minNum, maxNum){ 
+                switch(arguments.length){ 
+                    case 1: 
+                        return parseInt(Math.random() * minNum + 1, 10); 
+                    break; 
+                    case 2: 
+                        return parseInt(Math.random() * (maxNum - minNum+1) + minNum, 10); 
+                    break; 
+                        default: 
+                            return 0; 
+                        break; 
+                } 
+            } 
+            },
+        }).mount("#app");
+    </script>
+</body>
+</html>
